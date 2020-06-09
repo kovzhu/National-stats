@@ -68,7 +68,10 @@ def ExtratTable(JsonData,DataYears):
 def main():
     DataCode ={'ResourceProd':'A070B',
                 'OilBalance':'A070Q',
-                'GasBalance':'A0710'}
+                'GasBalance':'A0710',
+                'CrudeBalance':'A070U',
+                'EnergyConsumption':'A070E',
+                'EnergyImport':'A0707'}
     DataYears = 10
     with pd.ExcelWriter('National Stats Data.xlsx') as writer:
         for i in DataCode:
