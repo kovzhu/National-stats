@@ -7,24 +7,30 @@ def gettime():
     return int(round(time.time()*1000))
 
 
-def GetJsonData(DataYears,DataCode):
+def GetJsonData(DataYears,DataCode,Period):
     url = r'http://data.stats.gov.cn/easyquery.htm'
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36'}
     
     # Set keyvalue
     keyvalue={}
     keyvalue['m'] = 'QueryData'
-    keyvalue['dbcode'] = 'hgnd'
+    if Period == 'Yearly':
+        keyvalue['dbcode'] = 'hgnd'
+    elif Period == 'Monthly':
+        keyvalue['dbcode'] = 'hgyd'
+    elif Period == 'Quarterly':
+        keyvalue['dbcode'] = 'hgjd'
+    else:
+        Print('Wrong Period, please input Yearly, Montly or Quarterly')
     keyvalue['rowcode'] = 'zb'
     keyvalue['colcode'] = 'sj'
     keyvalue['wds'] = '[]'
-    dfws = {}
     keyvalue['dfwds'] = '[{"wdcode":"zb","valuecode":"' + DataCode +'"}]'
     keyvalue['k1'] = str(gettime())
     keyvalue['h']=1
     # Start a session
     s = requests.session()
-    if DataYears == 10:
+    if DataYears == 10 or DataYears==13:
 
         response = s.get(url,headers=headers, params = keyvalue)
         # Change the keyvalue for 20 years of data
@@ -71,19 +77,31 @@ def ExtratTable(JsonData,DataYears):
     return Table_Reorder 
 
 def main():
-    DataCode ={'ResourceProd':'A070B',
+    DataCodeYearly ={'ResourceProd':'A070B',
                 'OilBalance':'A070Q',
                 'GasBalance':'A0710',
                 'CrudeBalance':'A070U',
                 'EnergyConsumption':'A070E',
-                'EnergyImport':'A0707'}
+                'EnergyImport':'A0707'
+                }
+    DataCodeMonthly ={
+                'Crude Montly Prod':'A030102',
+                'Gas Monthly Prod':'A030103',
+                'CBM Monthly Prod':'A030104',
+                'LNG prod':'A030105'
+                }
+    
     DataYears = 10
+    DataMonths = 13
     with pd.ExcelWriter('National Stats Data.xlsx') as writer:
-        for i in DataCode:
-            Table = ExtratTable(GetJsonData(DataYears,DataCode[i]),DataYears)
+        for i in DataCodeYearly:
+            Table = ExtratTable(GetJsonData(DataYears,DataCodeYearly[i],'Yearly'),DataYears)
+            Table.to_excel(writer,sheet_name=i)
+        for i in DataCodeMonthly:
+            Table = ExtratTable(GetJsonData(DataMonths,DataCodeMonthly[i],'Monthly'),DataMonths)
             Table.to_excel(writer,sheet_name=i)
         
-    Table.to_excel('National Stats.xlsx')
+    # Table.to_excel('National Stats.xlsx')
     # print(Table)
 
 if __name__ == '__main__':
