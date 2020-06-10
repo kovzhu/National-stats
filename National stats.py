@@ -21,7 +21,7 @@ def GetJsonData(DataYears,DataCode,Period):
     elif Period == 'Quarterly':
         keyvalue['dbcode'] = 'hgjd'
     else:
-        Print('Wrong Period, please input Yearly, Montly or Quarterly')
+        print('Wrong Period, please input Yearly, Montly or Quarterly')
     keyvalue['rowcode'] = 'zb'
     keyvalue['colcode'] = 'sj'
     keyvalue['wds'] = '[]'
@@ -62,7 +62,15 @@ def ExtratTable(JsonData,DataYears):
         data.append(datanodes[i]['data']['strdata'])
         year.append(datanodes[i]['wds'][1]['valuecode'])
         code.append(datanodes[i]['wds'][0]['valuecode'])  
-    # data = [float(i) for i in data]
+
+    # Convert the string data into float data
+    for i in range(0,len(data)):
+        try:
+            data[i]=float(data[i])
+        except:
+            continue
+    
+    # Rebuild the table from json file
     table = pd.DataFrame({'Items':itemlist, 'Unit':itemUnit})
     for i in range(0,DataYears):
         table[str(year[i])]=0    
@@ -74,21 +82,25 @@ def ExtratTable(JsonData,DataYears):
     for i in range(2,len(table.columns)):
         Table_Reorder = Table_Reorder.join(table.iloc[:,[len(table.columns)-i+1]])
 
+    Table_Reorder.set_index('Items', inplace=True)
+
     return Table_Reorder 
 
 def main():
-    DataCodeYearly ={'ResourceProd':'A070B',
-                'OilBalance':'A070Q',
-                'GasBalance':'A0710',
-                'CrudeBalance':'A070U',
-                'EnergyConsumption':'A070E',
-                'EnergyImport':'A0707'
+    DataCodeYearly ={'Energy Prod':'A070B',
+                'Oil Balance':'A070Q',
+                'Gas Balance':'A0710',
+                'Crude Balance':'A070U',
+                'Energy Consumption':'A070E',
+                'Energy Import':'A0707',
+                'Energy Investment':'A070A'
                 }
     DataCodeMonthly ={
                 'Crude Montly Prod':'A030102',
                 'Gas Monthly Prod':'A030103',
                 'CBM Monthly Prod':'A030104',
-                'LNG prod':'A030105'
+                'LNG prod':'A030105',
+                'PMI Index':'A0B03'
                 }
     
     DataYears = 10
