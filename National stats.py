@@ -62,8 +62,13 @@ def ExtratTable(JsonData,DataYears):
         table[str(year[i])]=0    
     for i in range(0,len(itemlist)):
         table.iloc[i,2:]=data[i*DataYears:(i+1)*DataYears]
+    
+    # Reverse the order of data
+    Table_Reorder=table[['Items','Unit']]
+    for i in range(2,len(table.columns)):
+        Table_Reorder = Table_Reorder.join(table.iloc[:,[len(table.columns)-i+1]])
 
-    return table 
+    return Table_Reorder 
 
 def main():
     DataCode ={'ResourceProd':'A070B',
@@ -78,8 +83,10 @@ def main():
             Table = ExtratTable(GetJsonData(DataYears,DataCode[i]),DataYears)
             Table.to_excel(writer,sheet_name=i)
         
-    # Table.to_excel('National Stats.xlsx')
+    Table.to_excel('National Stats.xlsx')
     # print(Table)
 
 if __name__ == '__main__':
     main()    
+    
+
