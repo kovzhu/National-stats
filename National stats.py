@@ -3,16 +3,18 @@ import time
 import json 
 import pandas as pd 
 
+# for getting time stamp as parameter
 def gettime():
     return int(round(time.time()*1000))
 
-
+# to get the json data for the data table
 def GetJsonData(DataYears,DataCode,Period):
     url = r'http://data.stats.gov.cn/easyquery.htm'
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36'}
     
     # Set keyvalue
     keyvalue={}
+    # Different keyvalue for yearly, monthly or quarterly data
     keyvalue['m'] = 'QueryData'
     if Period == 'Yearly':
         keyvalue['dbcode'] = 'hgnd'
@@ -21,10 +23,11 @@ def GetJsonData(DataYears,DataCode,Period):
     elif Period == 'Quarterly':
         keyvalue['dbcode'] = 'hgjd'
     else:
-        print('Wrong Period, please input Yearly, Montly or Quarterly')
+        print('Wrong Period, please input Yearly, Monthly or Quarterly')
     keyvalue['rowcode'] = 'zb'
     keyvalue['colcode'] = 'sj'
     keyvalue['wds'] = '[]'
+    # DataCode defines what table to extract
     keyvalue['dfwds'] = '[{"wdcode":"zb","valuecode":"' + DataCode +'"}]'
     keyvalue['k1'] = str(gettime())
     keyvalue['h']=1
@@ -33,18 +36,25 @@ def GetJsonData(DataYears,DataCode,Period):
     if DataYears == 10 or DataYears==13:
 
         response = s.get(url,headers=headers, params = keyvalue)
-        # Change the keyvalue for 20 years of data
+        
 
-    elif DataYears == 20:# Get the 20 years data
+    elif DataYears == 20 or DataYears == 36:# Get the 20 years or 36 months data
         response = s.get(url,headers=headers, params = keyvalue)
-        keyvalue['dfwds']='[{"wdcode":"sj","valuecode":"LAST20"}]'
+        if DataYears ==20:
+            keyvalue['dfwds']='[{"wdcode":"sj","valuecode":"LAST20"}]'
+        else:
+            keyvalue['dfwds']='[{"wdcode":"sj","valuecode":"LAST36"}]'
         keyvalue['k1']=str(gettime())
+        # parameter of 'h' is not needed here
+        keyvalue.pop('h')
+        # s.cookies.update()
         response = s.get(url,headers=headers, params = keyvalue)
     else:
         print('Error of number of years')
     JsonData = dict(json.loads(response.text))['returndata']
     return JsonData
 
+# convert the json data into pandas dataframe
 def ExtratTable(JsonData,DataYears):
     datanodes = JsonData['datanodes']
     wdnodes = JsonData['wdnodes']
@@ -87,6 +97,7 @@ def ExtratTable(JsonData,DataYears):
     return Table_Reorder 
 
 def main():
+    # define the table for yearly data
     DataCodeYearly ={'Energy Prod':'A070B',
                 'Oil Balance':'A070Q',
                 'Gas Balance':'A0710',
@@ -95,6 +106,7 @@ def main():
                 'Energy Import':'A0707',
                 'Energy Investment':'A070A'
                 }
+    # define the table for monthly data
     DataCodeMonthly ={
                 'Crude Montly Prod':'A030102',
                 'Gas Monthly Prod':'A030103',
@@ -103,8 +115,10 @@ def main():
                 'PMI Index':'A0B03'
                 }
     
-    DataYears = 10
-    DataMonths = 13
+    # set the length of data: 10 or 20 years, 13 or 36 months
+    DataYears = 20
+    DataMonths = 36
+    # Write the tables into excel
     with pd.ExcelWriter('National Stats Data.xlsx') as writer:
         for i in DataCodeYearly:
             Table = ExtratTable(GetJsonData(DataYears,DataCodeYearly[i],'Yearly'),DataYears)
@@ -113,8 +127,6 @@ def main():
             Table = ExtratTable(GetJsonData(DataMonths,DataCodeMonthly[i],'Monthly'),DataMonths)
             Table.to_excel(writer,sheet_name=i)
         
-    # Table.to_excel('National Stats.xlsx')
-    # print(Table)
 
 if __name__ == '__main__':
     main()    
